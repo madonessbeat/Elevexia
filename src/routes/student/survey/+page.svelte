@@ -69,14 +69,14 @@
 	<!-- Progress -->
 	<div class="space-y-2">
 		<div class="flex items-center justify-between text-xs text-muted-foreground">
-			<span>Question {currentIndex + 1} of {SURVEY_QUESTIONS.length}</span>
-			<span>{Math.round(progressPct)}%</span>
+			<span>Question <span class="tabular-nums">{currentIndex + 1}</span> of <span class="tabular-nums">{SURVEY_QUESTIONS.length}</span></span>
+			<span class="tabular-nums">{Math.round(progressPct)}%</span>
 		</div>
 		<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
 			<div
 				class="h-2 rounded-full bg-primary transition-all duration-300"
 				style="width: {progressPct}%"
-			/>
+			></div>
 		</div>
 	</div>
 
@@ -96,7 +96,7 @@
 				Back
 			</button>
 		{:else}
-			<div />
+			<div></div>
 		{/if}
 
 		<button

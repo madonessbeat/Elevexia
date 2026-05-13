@@ -50,7 +50,7 @@
 			<div
 				class="h-2 rounded-full bg-primary transition-all duration-300"
 				style="width: {progressPct}%"
-			/>
+			></div>
 		</div>
 	</div>
 

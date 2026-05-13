@@ -33,7 +33,7 @@
 						: 'border-input'}"
 				>
 					{#if value === option.value}
-						<span class="h-2 w-2 rounded-full bg-primary" />
+						<span class="h-2 w-2 rounded-full bg-primary"></span>
 					{/if}
 				</span>
 				<span class="text-sm">{option.label}</span>

@@ -52,8 +52,11 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
-				display: ['Lexend', 'Inter', 'system-ui', 'sans-serif']
+				sans: ['"Geist Variable"', 'system-ui', 'sans-serif'],
+				mono: ['"Geist Mono Variable"', 'ui-monospace', 'monospace'],
+				// keep 'display' alias so existing font-display classes resolve to Geist
+				display: ['"Geist Variable"', 'system-ui', 'sans-serif'],
+				reading: ['"Lexend Variable"', 'system-ui', 'sans-serif']
 			}
 		}
 	},

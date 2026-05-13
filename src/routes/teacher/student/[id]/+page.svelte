@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
-	import { ChevronLeft, Check, Shuffle } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
+	import { Select } from 'bits-ui';
+	import { ChevronLeft, Check, Shuffle, ChevronDown } from 'lucide-svelte';
 	import FlagBadge from '$lib/components/FlagBadge.svelte';
 	import EvidenceList from '$lib/components/EvidenceList.svelte';
 	import OverrideDialog from '$lib/components/OverrideDialog.svelte';
@@ -17,12 +18,13 @@
 		extended_challenge: 'Extended Challenge'
 	};
 
-	$: studentId = $page.params.id ?? '';
-	$: state = $studentsStore;
-	$: student = state.students.find((s) => s.id === studentId);
-	$: overridden = new Set(state.overriddenFlags[studentId] ?? []);
-	$: confirmed = new Set(state.confirmedFlags[studentId] ?? []);
-	$: activeFlagKeys = student?.flags ? FLAG_KEYS.filter((k) => student!.flags![k].value) : [];
+	const studentId = $derived(page.params.id ?? '');
+	const student = $derived($studentsStore.students.find((s) => s.id === studentId));
+	const overridden = $derived(new Set($studentsStore.overriddenFlags[studentId] ?? []));
+	const confirmed = $derived(new Set($studentsStore.confirmedFlags[studentId] ?? []));
+	const activeFlagKeys = $derived(
+		student?.flags ? FLAG_KEYS.filter((k) => student!.flags![k].value) : []
+	);
 
 	function flagState(flag: keyof FlagSet): 'active' | 'overridden' | 'inactive' {
 		if (!student?.flags) return 'inactive';
@@ -31,12 +33,12 @@
 	}
 
 	function isFlagConfirmed(flag: keyof FlagSet): boolean {
-		return student?.validatedByTeacher || confirmed.has(flag);
+		return !!(student?.validatedByTeacher || confirmed.has(flag));
 	}
 
-	// ---- Override dialog ----
-	let overrideOpen = false;
-	let overrideFlag: keyof FlagSet | null = null;
+	// ── Override dialog ────────────────────────────────────────────
+	let overrideOpen = $state(false);
+	let overrideFlag: keyof FlagSet | null = $state(null);
 
 	function openOverride(flag: keyof FlagSet) {
 		overrideFlag = flag;
@@ -48,7 +50,7 @@
 		studentsStore.overrideFlag(studentId, overrideFlag, reason);
 		overrideOpen = false;
 		overrideFlag = null;
-		showToast('Flag overridden successfully');
+		toast.success('Flag overridden successfully');
 	}
 
 	function handleOverrideCancel() {
@@ -56,31 +58,25 @@
 		overrideFlag = null;
 	}
 
-	// ---- Validate ----
+	// ── Validate ──────────────────────────────────────────────────
 	function handleValidate(flag: keyof FlagSet) {
 		studentsStore.confirmFlag(studentId, flag);
-		showToast(`${FLAG_LABELS[flag]} confirmed`);
+		toast.success(`${FLAG_LABELS[flag]} confirmed`);
 	}
 
-	// ---- Material generation ----
-	let subject = 'maths';
-	let topic = '';
+	// ── Material generation ───────────────────────────────────────
+	const subjects = [
+		{ value: 'maths', label: 'Maths', disabled: false },
+		{ value: 'english', label: 'English (coming soon)', disabled: true },
+		{ value: 'science', label: 'Science (coming soon)', disabled: true }
+	];
+
+	let selectedSubject: { value: string; label?: string } = $state({ value: 'maths', label: 'Maths' });
+	let topic = $state('');
 
 	function handleGenerate() {
 		if (!topic.trim()) return;
 		goto(`/teacher/material/${studentId}?topic=${encodeURIComponent(topic.trim())}`);
-	}
-
-	// ---- Toast ----
-	let toast: string | null = null;
-	let toastTimer: ReturnType<typeof setTimeout> | null = null;
-
-	function showToast(msg: string) {
-		if (toastTimer) clearTimeout(toastTimer);
-		toast = msg;
-		toastTimer = setTimeout(() => {
-			toast = null;
-		}, 3000);
 	}
 </script>
 
@@ -147,7 +143,7 @@
 										<button
 											type="button"
 											disabled={isFlagConfirmed(flagKey)}
-											on:click={() => handleValidate(flagKey)}
+											onclick={() => handleValidate(flagKey)}
 											class="inline-flex items-center gap-1.5 rounded-[--radius] border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-50"
 											title={isFlagConfirmed(flagKey) ? 'Already confirmed' : 'Confirm this assessment'}
 										>
@@ -160,7 +156,7 @@
 										</button>
 										<button
 											type="button"
-											on:click={() => openOverride(flagKey)}
+											onclick={() => openOverride(flagKey)}
 											class="inline-flex items-center gap-1.5 rounded-[--radius] border border-border bg-secondary px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
 										>
 											<Shuffle class="h-3 w-3" />
@@ -188,18 +184,36 @@
 					Generate adapted worksheet
 				</h2>
 
-				<div class="rounded-[--radius] border border-border bg-card p-5 space-y-4">
+				<div class="space-y-4 rounded-[--radius] border border-border bg-card p-5">
 					<div class="space-y-1.5">
-						<label for="subject" class="text-sm font-medium text-foreground">Subject</label>
-						<select
-							id="subject"
-							bind:value={subject}
-							class="w-full rounded-[--radius] border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+						<label for="subject-trigger" class="text-sm font-medium text-foreground">Subject</label>
+						<Select.Root
+							selected={selectedSubject}
+							onSelectedChange={(v) => { if (v) selectedSubject = v; }}
 						>
-							<option value="maths">Maths</option>
-							<option value="english" disabled>English (coming soon)</option>
-							<option value="science" disabled>Science (coming soon)</option>
-						</select>
+							<Select.Trigger
+								id="subject-trigger"
+								class="flex w-full items-center justify-between rounded-[--radius] border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>
+								<Select.Value placeholder="Select subject…" />
+								<ChevronDown class="h-4 w-4 shrink-0 text-muted-foreground" />
+							</Select.Trigger>
+							<Select.Content
+								class="z-50 min-w-[8rem] overflow-hidden rounded-[--radius] border border-border bg-popover shadow-md"
+								sideOffset={4}
+							>
+								{#each subjects as s}
+									<Select.Item
+										value={s.value}
+										label={s.label}
+										disabled={s.disabled}
+										class="flex cursor-pointer select-none items-center px-3 py-2 text-sm outline-none data-[disabled]:cursor-not-allowed data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:opacity-50"
+									>
+										{s.label}
+									</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
 					</div>
 
 					<div class="space-y-1.5">
@@ -209,14 +223,14 @@
 							type="text"
 							bind:value={topic}
 							placeholder="e.g. fractions, long division…"
-							class="w-full rounded-[--radius] border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+							class="w-full rounded-[--radius] border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						/>
 					</div>
 
 					<button
 						type="button"
 						disabled={!topic.trim()}
-						on:click={handleGenerate}
+						onclick={handleGenerate}
 						class="w-full rounded-[--radius] bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-40"
 					>
 						Generate →
@@ -229,7 +243,7 @@
 
 				<!-- Active flags summary -->
 				{#if activeFlagKeys.length > 0}
-					<div class="mt-4 rounded-[--radius] bg-accent p-4 space-y-2">
+					<div class="mt-4 space-y-2 rounded-[--radius] bg-accent p-4">
 						<p class="text-xs font-medium text-accent-foreground">Adaptations will include:</p>
 						<div class="flex flex-wrap gap-1.5">
 							{#each activeFlagKeys as flag}
@@ -244,22 +258,13 @@
 
 	<!-- Override dialog -->
 	{#if overrideFlag && student.flags}
+		{@const activeFlag = overrideFlag}
 		<OverrideDialog
 			open={overrideOpen}
-			flag={overrideFlag}
-			currentValue={student.flags[overrideFlag].value}
+			flag={activeFlag}
+			currentValue={student.flags[activeFlag].value}
 			onConfirm={handleOverrideConfirm}
 			onCancel={handleOverrideCancel}
 		/>
-	{/if}
-
-	<!-- Toast -->
-	{#if toast}
-		<div
-			transition:fly={{ y: 16, duration: 150 }}
-			class="fixed bottom-6 right-6 z-50 rounded-[--radius] bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg"
-		>
-			{toast}
-		</div>
 	{/if}
 {/if}

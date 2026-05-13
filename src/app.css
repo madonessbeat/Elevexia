@@ -1,76 +1,82 @@
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+@import '@fontsource-variable/lexend';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
 	:root {
-		/* Background & surface */
+		/* Surfaces */
 		--background: 0 0% 100%;
-		--foreground: 224 71% 4%;
+		--foreground: 210 11% 15%;
 
 		--card: 0 0% 100%;
-		--card-foreground: 224 71% 4%;
+		--card-foreground: 210 11% 15%;
 
 		--popover: 0 0% 100%;
-		--popover-foreground: 224 71% 4%;
+		--popover-foreground: 210 11% 15%;
 
-		/* Brand primary — indigo-600 */
-		--primary: 238 76% 55%;
+		/* Brand primary — teal-700 */
+		--primary: 173 72% 25%;
 		--primary-foreground: 0 0% 100%;
 
 		/* Secondary — slate-100 */
-		--secondary: 220 14% 96%;
-		--secondary-foreground: 224 71% 4%;
+		--secondary: 210 11% 96%;
+		--secondary-foreground: 210 11% 15%;
 
-		/* Muted — slate-100 */
-		--muted: 220 14% 96%;
-		--muted-foreground: 220 9% 46%;
+		/* Muted */
+		--muted: 210 11% 96%;
+		--muted-foreground: 210 11% 45%;
 
-		/* Accent — violet-50 */
-		--accent: 250 100% 97%;
-		--accent-foreground: 238 76% 55%;
+		/* Accent — amber-500 */
+		--accent: 38 92% 50%;
+		--accent-foreground: 0 0% 100%;
 
-		/* Destructive — red-500 */
+		/* Destructive */
 		--destructive: 0 84% 60%;
 		--destructive-foreground: 0 0% 100%;
 
 		/* Borders & inputs */
-		--border: 220 13% 91%;
-		--input: 220 13% 91%;
-		--ring: 238 76% 55%;
+		--border: 210 11% 89%;
+		--input: 210 11% 89%;
+		--ring: 173 72% 25%;
 
 		/* Border radius */
 		--radius: 0.625rem;
 	}
 
 	.dark {
-		--background: 224 71% 4%;
-		--foreground: 210 20% 98%;
+		--background: 210 11% 8%;
+		--foreground: 210 11% 96%;
 
-		--card: 224 71% 4%;
-		--card-foreground: 210 20% 98%;
+		--card: 210 11% 11%;
+		--card-foreground: 210 11% 96%;
 
-		--popover: 224 71% 4%;
-		--popover-foreground: 210 20% 98%;
+		--popover: 210 11% 11%;
+		--popover-foreground: 210 11% 96%;
 
-		--primary: 238 76% 65%;
-		--primary-foreground: 224 71% 4%;
+		/* Brand primary — teal-400 */
+		--primary: 172 66% 50%;
+		--primary-foreground: 210 11% 8%;
 
-		--secondary: 215 28% 17%;
-		--secondary-foreground: 210 20% 98%;
+		--secondary: 210 11% 18%;
+		--secondary-foreground: 210 11% 96%;
 
-		--muted: 215 28% 17%;
-		--muted-foreground: 217 11% 65%;
+		--muted: 210 11% 18%;
+		--muted-foreground: 210 11% 60%;
 
-		--accent: 215 28% 17%;
-		--accent-foreground: 210 20% 98%;
+		/* Accent — amber-500 same across modes */
+		--accent: 38 92% 50%;
+		--accent-foreground: 210 11% 8%;
 
-		--destructive: 0 63% 31%;
-		--destructive-foreground: 210 20% 98%;
+		--destructive: 0 63% 45%;
+		--destructive-foreground: 0 0% 100%;
 
-		--border: 215 28% 17%;
-		--input: 215 28% 17%;
-		--ring: 238 76% 65%;
+		--border: 210 11% 20%;
+		--input: 210 11% 20%;
+		--ring: 172 66% 50%;
 	}
 }
 
@@ -85,5 +91,103 @@
 
 	h1, h2, h3, h4, h5, h6 {
 		@apply font-display;
+	}
+
+	*:focus-visible {
+		outline: 2px solid hsl(var(--ring));
+		outline-offset: 2px;
+		border-radius: calc(var(--radius) - 2px);
+	}
+}
+
+/* View transitions — 200 ms cross-fade on every SvelteKit navigation */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 200ms;
+}
+
+/* Pulse ring — used on StudentCard flag icons for unvalidated students */
+@keyframes pulse-ring {
+	0%, 100% { opacity: 0.4; }
+	50% { opacity: 1; }
+}
+.pulse-ring {
+	animation: pulse-ring 2s ease-in-out infinite;
+}
+
+/* cmdk-sv command palette items */
+[data-cmdk-group-heading] {
+	padding: 0.375rem 0.75rem 0.25rem;
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: hsl(var(--muted-foreground));
+}
+[data-cmdk-item] {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	border-radius: 0.375rem;
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	cursor: pointer;
+	color: hsl(var(--foreground));
+	outline: none;
+	user-select: none;
+}
+[data-cmdk-item][data-selected],
+[data-cmdk-item]:hover {
+	background-color: hsl(var(--accent));
+	color: hsl(var(--accent-foreground));
+}
+[data-cmdk-separator] {
+	height: 1px;
+	margin: 0.375rem 0;
+	background-color: hsl(var(--border));
+}
+
+/* Page-flip — step 4 of worksheet generation */
+@keyframes page-flip {
+	0% { transform: perspective(600px) rotateY(-28deg); opacity: 0; }
+	60% { transform: perspective(600px) rotateY(4deg); opacity: 0.7; }
+	100% { transform: perspective(600px) rotateY(0deg); opacity: 1; }
+}
+.page-flip {
+	animation: page-flip 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Student-flow slide transitions — direction class set via onNavigate in student +layout */
+@keyframes slide-out-up-nav {
+	to { transform: translateY(-24px); opacity: 0; }
+}
+@keyframes slide-in-up-nav {
+	from { transform: translateY(24px); opacity: 0; }
+}
+@keyframes slide-out-down-nav {
+	to { transform: translateY(24px); opacity: 0; }
+}
+@keyframes slide-in-down-nav {
+	from { transform: translateY(-24px); opacity: 0; }
+}
+
+.student-nav-forward::view-transition-old(root) {
+	animation: slide-out-up-nav 220ms ease-in forwards;
+}
+.student-nav-forward::view-transition-new(root) {
+	animation: slide-in-up-nav 220ms ease-out forwards;
+}
+.student-nav-backward::view-transition-old(root) {
+	animation: slide-out-down-nav 220ms ease-in forwards;
+}
+.student-nav-backward::view-transition-new(root) {
+	animation: slide-in-down-nav 220ms ease-out forwards;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
 	}
 }

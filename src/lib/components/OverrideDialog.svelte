@@ -55,7 +55,7 @@
 					rows="3"
 					placeholder="Describe why you are overriding this flag…"
 					class="w-full rounded-[--radius] border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-				/>
+				></textarea>
 				<p class="text-xs text-muted-foreground">
 					{reason.trim().length} / 10 minimum characters
 				</p>

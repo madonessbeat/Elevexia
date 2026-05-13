@@ -35,5 +35,8 @@
     "pdfmake": "^0.3.8",
     "tailwind-merge": "^2.3.0"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": "20.x"
+  }
 }

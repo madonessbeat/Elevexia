@@ -2,34 +2,41 @@
 	import { crossfade } from 'svelte/transition';
 	import { cubicInOut } from 'svelte/easing';
 	import { dev } from '$app/environment';
-	import { FileText, RotateCcw, Users } from 'lucide-svelte';
+	import { FileText, RotateCcw, Users, UserPlus, Lightbulb, X } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import StudentCard from '$lib/components/StudentCard.svelte';
 	import { studentsStore } from '$lib/stores/students';
 	import type { Student, Flag } from '$lib/types';
 
 	// ── Filter state ──────────────────────────────────────────────
-	type Filter = 'all' | 'needs_review' | 'validated';
+	type Filter = 'all' | 'needs_review' | 'validated' | 'pending_diagnostic';
 	let activeFilter: Filter = $state('all');
+
+	const anonymizedOn = $derived($studentsStore.featureToggles.anonymizedStudents);
+	const lessonPlans = $derived($studentsStore.lessonPlans);
+	let bannerDismissed = $state(false);
 
 	const allStudents = $derived($studentsStore.students);
 	const needsReview = $derived(
 		allStudents.filter((s) => s.flags !== null && !s.validatedByTeacher)
 	);
 	const validated = $derived(allStudents.filter((s) => s.validatedByTeacher));
+	const pendingDiagnostic = $derived(allStudents.filter((s) => s.diagnosticStatus === 'pending'));
 
 	const filtered = $derived(
 		allStudents.filter((s) => {
 			if (activeFilter === 'needs_review') return s.flags !== null && !s.validatedByTeacher;
 			if (activeFilter === 'validated') return s.validatedByTeacher;
+			if (activeFilter === 'pending_diagnostic') return s.diagnosticStatus === 'pending';
 			return true;
 		})
 	);
 
 	const chips = $derived([
 		{ id: 'all' as Filter, label: 'All' },
-		{ id: 'needs_review' as Filter, label: `Needs review (${needsReview.length})` },
-		{ id: 'validated' as Filter, label: `Validated (${validated.length})` }
+		{ id: 'needs_review' as Filter, label: `Needs review (${needsReview.length})` },
+		{ id: 'validated' as Filter, label: `Validated (${validated.length})` },
+		{ id: 'pending_diagnostic' as Filter, label: `Awaiting diagnostic (${pendingDiagnostic.length})` }
 	]);
 
 	// ── Crossfade for chip pill ───────────────────────────────────
@@ -53,9 +60,7 @@
 	}
 
 	const lastAssessmentTime = $derived(computeLastAssessment(allStudents));
-	const lastAssessmentStr = $derived(
-		lastAssessmentTime ? timeAgo(lastAssessmentTime) : 'never'
-	);
+	const lastAssessmentStr = $derived(lastAssessmentTime ? timeAgo(lastAssessmentTime) : 'never');
 
 	// ── Skeleton loading ──────────────────────────────────────────
 	let loaded = $state(false);
@@ -68,6 +73,7 @@
 	function handleReset() {
 		studentsStore.reset();
 		activeFilter = 'all';
+		bannerDismissed = false;
 		toast.success('Demo data reset.');
 	}
 
@@ -77,11 +83,11 @@
 </script>
 
 <!-- Sticky top bar -->
-<div
-	class="sticky top-0 z-10 border-b border-border bg-background/70 backdrop-blur-md"
->
+<div class="sticky top-0 z-10 border-b border-border bg-background/70 backdrop-blur-md">
 	<div class="flex items-center gap-2 px-8 py-3">
-		<p class="text-sm font-semibold text-foreground">Year 5 Maple</p>
+		<p class="text-sm font-semibold text-foreground">
+			{anonymizedOn ? 'Year 5 Maple — Anonymized View' : 'Year 5 Maple'}
+		</p>
 		<span class="text-muted-foreground/40">·</span>
 		<p class="text-sm text-muted-foreground"><span class="tabular-nums">{allStudents.length}</span> students</p>
 		<span class="text-muted-foreground/40">·</span>
@@ -90,6 +96,29 @@
 		<p class="text-sm text-muted-foreground">last assessment {lastAssessmentStr}</p>
 	</div>
 </div>
+
+<!-- Active lesson plan banner -->
+{#if lessonPlans.length > 0 && !bannerDismissed}
+	{@const latest = lessonPlans[lessonPlans.length - 1]}
+	<div class="flex items-center gap-3 border-b border-primary/20 bg-primary/8 px-8 py-3">
+		<Lightbulb class="h-4 w-4 shrink-0 text-primary" />
+		<p class="flex-1 text-sm text-foreground">
+			<span class="font-semibold">Active lesson plan:</span>
+			<span class="ml-1 text-muted-foreground line-clamp-1">"{latest.objectives}"</span>
+		</p>
+		<a href="/teacher/lesson-plan" class="text-xs font-medium text-primary hover:underline underline-offset-2">
+			View plan
+		</a>
+		<button
+			type="button"
+			onclick={() => (bannerDismissed = true)}
+			class="text-muted-foreground hover:text-foreground transition-colors"
+			aria-label="Dismiss banner"
+		>
+			<X class="h-3.5 w-3.5" />
+		</button>
+	</div>
+{/if}
 
 <div class="p-8">
 	<!-- Header -->
@@ -112,6 +141,14 @@
 				</button>
 			{/if}
 
+			<a
+				href="/teacher/students/add"
+				class="flex items-center gap-2 rounded-[--radius] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+			>
+				<UserPlus class="h-4 w-4" />
+				Add Student
+			</a>
+
 			<button
 				type="button"
 				onclick={handleReport}
@@ -124,13 +161,12 @@
 	</div>
 
 	<!-- Filter chips with sliding pill -->
-	<div class="mb-5 flex gap-1 rounded-full bg-secondary p-1">
+	<div class="mb-5 flex flex-wrap gap-1 rounded-full bg-secondary p-1">
 		{#each chips as chip (chip.id)}
 			<button
 				type="button"
 				onclick={() => (activeFilter = chip.id)}
-				class="relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {activeFilter ===
-				chip.id
+				class="relative rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary {activeFilter === chip.id
 					? 'text-primary-foreground'
 					: 'text-muted-foreground hover:text-foreground'}"
 			>
@@ -148,7 +184,6 @@
 
 	<!-- Student grid -->
 	{#if !loaded}
-		<!-- Skeleton cards -->
 		<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each Array(5) as _, i}
 				<div class="animate-pulse rounded-[--radius] border border-border bg-card p-4">
@@ -178,8 +213,11 @@
 						All students have been reviewed — great work.
 					{:else if activeFilter === 'validated'}
 						No students have been validated yet.
+					{:else if activeFilter === 'pending_diagnostic'}
+						No students are waiting for a diagnostic.
 					{:else}
 						No students in this class yet.
+						<a href="/teacher/students/add" class="text-primary underline underline-offset-2">Add one now.</a>
 					{/if}
 				</p>
 			</div>
@@ -200,7 +238,7 @@
 					href="/teacher/student/{student.id}"
 					class="block rounded-[--radius] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
 				>
-					<StudentCard {student} />
+					<StudentCard {student} anonymized={anonymizedOn} />
 				</a>
 			{/each}
 		</div>

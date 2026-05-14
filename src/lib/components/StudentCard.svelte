@@ -2,7 +2,7 @@
 	import type { Student, FlagSet, Flag } from '$lib/types';
 	import { CheckCircle2, BookOpen, Layers, Languages, Hand, Sparkles } from 'lucide-svelte';
 
-	let { student }: { student: Student } = $props();
+	let { student, anonymized = false }: { student: Student; anonymized?: boolean } = $props();
 
 	const FLAG_KEYS: (keyof FlagSet)[] = [
 		'reading_accessibility',
@@ -28,7 +28,7 @@
 		extended_challenge: 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400'
 	};
 
-	const initials = $derived(student.firstName[0] + student.lastInitial);
+	const initials = $derived(anonymized ? '#' + student.lastInitial : student.firstName[0] + student.lastInitial);
 	const needsReview = $derived(student.flags !== null && !student.validatedByTeacher);
 
 	function getLastEvidence(s: Student): number | null {
@@ -64,8 +64,14 @@
 		</div>
 		<div class="min-w-0 flex-1 pr-5">
 			<div class="flex items-center gap-2">
-				<p class="truncate font-medium text-foreground">{student.firstName} {student.lastInitial}.</p>
-				{#if needsReview}
+				<p class="truncate font-medium text-foreground">
+					{anonymized && student.anonymizedLabel ? student.anonymizedLabel : `${student.firstName} ${student.lastInitial}.`}
+				</p>
+				{#if student.diagnosticStatus === 'pending'}
+					<span class="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+						Awaiting diagnostic
+					</span>
+				{:else if needsReview}
 					<span
 						class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
 					>

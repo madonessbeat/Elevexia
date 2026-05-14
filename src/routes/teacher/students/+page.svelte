@@ -1,25 +1,30 @@
 <script lang="ts">
-	import { FileText } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
+	import { UserPlus } from 'lucide-svelte';
 	import StudentCard from '$lib/components/StudentCard.svelte';
 	import { studentsStore } from '$lib/stores/students';
 
-	type Filter = 'all' | 'needs_review' | 'validated';
+	type Filter = 'all' | 'needs_review' | 'validated' | 'pending_diagnostic';
 	let activeFilter: Filter = 'all';
 
 	$: all = $studentsStore.students;
+	$: anonymizedOn = $studentsStore.featureToggles.anonymizedStudents;
 	$: needsReviewCount = all.filter((s) => s.flags !== null && !s.validatedByTeacher).length;
 	$: validatedCount = all.filter((s) => s.validatedByTeacher).length;
+	$: pendingCount = all.filter((s) => s.diagnosticStatus === 'pending').length;
 
 	$: filtered = all.filter((s) => {
 		if (activeFilter === 'needs_review') return s.flags !== null && !s.validatedByTeacher;
 		if (activeFilter === 'validated') return s.validatedByTeacher;
+		if (activeFilter === 'pending_diagnostic') return s.diagnosticStatus === 'pending';
 		return true;
 	});
 
 	const chips: { id: Filter; label: () => string }[] = [
 		{ id: 'all', label: () => 'All' },
 		{ id: 'needs_review', label: () => `Needs review (${needsReviewCount})` },
-		{ id: 'validated', label: () => `Validated (${validatedCount})` }
+		{ id: 'validated', label: () => `Validated (${validatedCount})` },
+		{ id: 'pending_diagnostic', label: () => `Awaiting diagnostic (${pendingCount})` }
 	];
 </script>
 
@@ -30,26 +35,16 @@
 			<p class="mt-0.5 text-sm text-muted-foreground">{all.length} students · Year 5 Maple</p>
 		</div>
 
-		<div class="group relative">
-			<button
-				disabled
-				class="flex items-center gap-2 rounded-[--radius] border border-border bg-secondary px-4 py-2 text-sm font-medium text-muted-foreground opacity-60"
-				aria-describedby="report-tooltip"
-			>
-				<FileText class="h-4 w-4" />
-				Generate class report
-			</button>
-			<div
-				id="report-tooltip"
-				role="tooltip"
-				class="pointer-events-none absolute right-0 top-full mt-1.5 hidden rounded-md bg-foreground px-2.5 py-1 text-xs text-background shadow group-hover:block"
-			>
-				Coming soon
-			</div>
-		</div>
+		<a
+			href="/teacher/students/add"
+			class="flex items-center gap-2 rounded-[--radius] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+		>
+			<UserPlus class="h-4 w-4" />
+			Add Student
+		</a>
 	</div>
 
-	<div class="mb-5 flex gap-2">
+	<div class="mb-5 flex flex-wrap gap-2">
 		{#each chips as chip}
 			<button
 				type="button"
@@ -64,12 +59,26 @@
 	</div>
 
 	{#if filtered.length === 0}
-		<p class="text-sm text-muted-foreground">No students match this filter.</p>
+		<div class="flex flex-col items-center gap-3 py-16 text-center">
+			<p class="text-sm font-medium text-foreground">No students match this filter.</p>
+			{#if activeFilter !== 'all'}
+				<button
+					type="button"
+					on:click={() => (activeFilter = 'all')}
+					class="text-xs text-primary underline underline-offset-4"
+				>
+					View all students
+				</button>
+			{/if}
+		</div>
 	{:else}
 		<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 			{#each filtered as student (student.id)}
-				<a href="/teacher/student/{student.id}" class="block rounded-[--radius] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-					<StudentCard {student} />
+				<a
+					href="/teacher/student/{student.id}"
+					class="block rounded-[--radius] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+				>
+					<StudentCard {student} anonymized={anonymizedOn} />
 				</a>
 			{/each}
 		</div>

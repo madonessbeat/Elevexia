@@ -8,8 +8,8 @@
 	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		loading = true;
-		// Demo: any credentials accepted
-		goto('/teacher');
+		// Demo: any credentials accepted — role is chosen on the next screen
+		goto('/role-select');
 	}
 </script>
 
@@ -17,7 +17,7 @@
 	<div class="w-full max-w-sm space-y-8">
 		<div class="text-center">
 			<p class="font-display text-2xl font-bold text-primary">Elevexia</p>
-			<p class="mt-1 text-sm text-muted-foreground">Sign in to your teacher account</p>
+			<p class="mt-1 text-sm text-muted-foreground">Sign in to continue to your dashboard</p>
 		</div>
 
 		<form on:submit={handleSubmit} class="space-y-4">
@@ -55,7 +55,7 @@
 		</form>
 
 		<p class="text-center text-xs text-muted-foreground">
-			Demo mode — any credentials are accepted.
+			Demo mode — any credentials accepted. You'll choose your role next.
 		</p>
 	</div>
 </div>

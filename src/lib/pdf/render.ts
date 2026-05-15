@@ -73,7 +73,6 @@ export async function renderWorksheet(
 	flags: FlagSet | null
 ): Promise<Buffer> {
 	const _require = createRequire(import.meta.url);
-	// pdfmake CJS exports { __esModule: true, default: PdfPrinter }
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const Printer = (_require('pdfmake/js/Printer.js') as any).default as PdfPrinterCtor;
 

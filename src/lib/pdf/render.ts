@@ -1,9 +1,15 @@
 import type { TDocumentDefinitions, StyleDictionary } from 'pdfmake/interfaces';
 import type { Student, FlagSet } from '$lib/types';
-import { createRequire } from 'module';
+// @ts-expect-error — pdfmake subpath has no TS declarations; typed via PdfPrinterCtor below
+import _PdfPrinter from 'pdfmake/js/Printer.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfPrinterCtor = new (fonts: object, vfs?: unknown, urlResolver?: unknown, localAccess?: unknown) => { createPdfKitDocument(def: TDocumentDefinitions): Promise<any> };
+
+// Dev (ssr.external): Vite hands us module.exports = { __esModule:true, default: Class }
+// Prod (ssr.noExternal): Rollup's CJS plugin unwraps to the class directly
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Printer = (typeof _PdfPrinter === 'function' ? _PdfPrinter : (_PdfPrinter as any).default) as unknown as PdfPrinterCtor;
 
 export interface WorksheetQuestion {
 	stem: string;
@@ -72,10 +78,6 @@ export async function renderWorksheet(
 	student: Student,
 	flags: FlagSet | null
 ): Promise<Buffer> {
-	const _require = createRequire(import.meta.url);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const Printer = (_require('pdfmake/js/Printer.js') as any).default as PdfPrinterCtor;
-
 	const readingA11y = hasFlag(flags, 'reading_accessibility');
 	const chunking = hasFlag(flags, 'attention_chunking');
 	const scaffolding = hasFlag(flags, 'language_scaffolding');

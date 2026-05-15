@@ -1,13 +1,12 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-
-// Allow up to 60 s on Vercel Pro (Hobby plan hard-caps at 10 s regardless)
-export const config = { maxDuration: 60 };
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '$env/dynamic/private';
 import type { FlagSet, Student } from '$lib/types';
-import { renderWorksheet } from '$lib/pdf/render';
-import type { WorksheetData } from '$lib/pdf/render';
+import type { WorksheetData } from '$lib/pdf/docdef';
+
+// Allow up to 60 s on Vercel Pro (Hobby plan hard-caps at 10 s regardless)
+export const config = { maxDuration: 60 };
 
 const FLAG_ADAPTATION_MAP: Record<keyof FlagSet, string> = {
 	reading_accessibility:
@@ -77,7 +76,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (!student) throw error(400, 'Missing student');
 
 	const apiKey = env.GEMINI_API_KEY;
-	if (!apiKey) throw error(500, 'GEMINI_API_KEY is not configured on this server. Add it to your Vercel environment variables.');
+	if (!apiKey) throw error(500, 'GEMINI_API_KEY is not configured on this server.');
 
 	const genAI = new GoogleGenerativeAI(apiKey);
 	const model = genAI.getGenerativeModel({
@@ -104,19 +103,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		throw error(502, 'Model returned invalid JSON');
 	}
 
-	let pdfBuffer: Buffer;
-	try {
-		pdfBuffer = await renderWorksheet(worksheet, student, student.flags ?? null);
-	} catch (e) {
-		const msg = e instanceof Error ? e.message : String(e);
-		throw error(500, `PDF render error: ${msg}`);
-	}
-
-	return new Response(new Uint8Array(pdfBuffer), {
-		headers: {
-			'Content-Type': 'application/pdf',
-			'Content-Disposition': `inline; filename="worksheet-${student.firstName.toLowerCase()}-${topic.replace(/\s+/g, '-')}.pdf"`,
-			'Content-Length': String(pdfBuffer.byteLength)
-		}
-	});
+	// Return JSON — PDF rendering happens client-side, keeping this
+	// response well within Vercel's 10 s free-tier function limit.
+	return Response.json(worksheet);
 };

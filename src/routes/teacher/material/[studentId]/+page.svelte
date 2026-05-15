@@ -20,6 +20,8 @@
 	import FlagBadge from '$lib/components/FlagBadge.svelte';
 	import { studentsStore, FLAG_KEYS } from '$lib/stores/students';
 	import type { FlagSet } from '$lib/types';
+	import { buildDocDef, WORKSHEET_FONTS } from '$lib/pdf/docdef';
+	import type { WorksheetData } from '$lib/pdf/docdef';
 
 	// ── Route ─────────────────────────────────────────────────────
 	const studentId = $derived(page.params.studentId);
@@ -155,8 +157,20 @@
 				throw new Error(msg);
 			}
 
-			const blob = await res.blob();
+			const worksheetData: WorksheetData = await res.json();
 			await minWait;
+
+			// Render PDF in the browser — instant, no server timeout risk
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const pdfMakeModule = await import('pdfmake/build/pdfmake' as any);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const pdfMake = (pdfMakeModule.default ?? pdfMakeModule) as any;
+			const docDef = buildDocDef(worksheetData, student, student.flags ?? null);
+			const blob = await new Promise<Blob>((resolve, reject) => {
+				pdfMake.createPdf(docDef, null, WORKSHEET_FONTS).getBlob(
+					(b: Blob) => (b ? resolve(b) : reject(new Error('PDF blob was empty')))
+				);
+			});
 
 			pdfUrl = URL.createObjectURL(blob);
 			apiDone = true;

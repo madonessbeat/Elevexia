@@ -1,9 +1,12 @@
 import type { TDocumentDefinitions, StyleDictionary } from 'pdfmake/interfaces';
 import type { Student, FlagSet } from '$lib/types';
-import { createRequire } from 'module';
+// @ts-ignore — pdfmake/js/Printer.js has no typings; typed via PdfPrinterCtor below
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+import PdfPrinter from 'pdfmake/js/Printer.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfPrinterCtor = new (fonts: object, vfs?: unknown, urlResolver?: unknown, localAccess?: unknown) => { createPdfKitDocument(def: TDocumentDefinitions): Promise<any> };
+const Printer = PdfPrinter as unknown as PdfPrinterCtor;
 
 export interface WorksheetQuestion {
 	stem: string;
@@ -72,11 +75,6 @@ export async function renderWorksheet(
 	student: Student,
 	flags: FlagSet | null
 ): Promise<Buffer> {
-	// Lazy-load at call time so any CJS resolution failure is caught by the
-	// route handler's try/catch rather than crashing the module at cold-start
-	const _require = createRequire(import.meta.url);
-	const PdfPrinter = _require('pdfmake/js/Printer.js').default as PdfPrinterCtor;
-
 	const readingA11y = hasFlag(flags, 'reading_accessibility');
 	const chunking = hasFlag(flags, 'attention_chunking');
 	const scaffolding = hasFlag(flags, 'language_scaffolding');
@@ -180,7 +178,7 @@ export async function renderWorksheet(
 	};
 
 	// Pass a no-op urlResolver — pdfmake calls resolve() per URL then awaits resolved()
-	const printer = new PdfPrinter(FONTS, undefined, { resolve: () => {}, resolved: async () => {} }, undefined);
+	const printer = new Printer(FONTS, undefined, { resolve: () => {}, resolved: async () => {} }, undefined);
 	const doc = await printer.createPdfKitDocument(docDef);
 
 	return new Promise<Buffer>((resolve, reject) => {

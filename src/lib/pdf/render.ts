@@ -2,11 +2,8 @@ import type { TDocumentDefinitions, StyleDictionary } from 'pdfmake/interfaces';
 import type { Student, FlagSet } from '$lib/types';
 import { createRequire } from 'module';
 
-const _require = createRequire(import.meta.url);
-// pdfmake's browser bundle is the package root; the Node.js PdfPrinter lives in js/Printer.js
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfPrinterCtor = new (fonts: object, vfs?: unknown, urlResolver?: unknown, localAccess?: unknown) => { createPdfKitDocument(def: TDocumentDefinitions): Promise<any> };
-const PdfPrinter = _require('pdfmake/js/Printer.js').default as PdfPrinterCtor;
 
 export interface WorksheetQuestion {
 	stem: string;
@@ -75,6 +72,11 @@ export async function renderWorksheet(
 	student: Student,
 	flags: FlagSet | null
 ): Promise<Buffer> {
+	// Lazy-load at call time so any CJS resolution failure is caught by the
+	// route handler's try/catch rather than crashing the module at cold-start
+	const _require = createRequire(import.meta.url);
+	const PdfPrinter = _require('pdfmake/js/Printer.js').default as PdfPrinterCtor;
+
 	const readingA11y = hasFlag(flags, 'reading_accessibility');
 	const chunking = hasFlag(flags, 'attention_chunking');
 	const scaffolding = hasFlag(flags, 'language_scaffolding');

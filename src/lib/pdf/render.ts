@@ -1,12 +1,9 @@
 import type { TDocumentDefinitions, StyleDictionary } from 'pdfmake/interfaces';
 import type { Student, FlagSet } from '$lib/types';
-// @ts-ignore — pdfmake/js/Printer.js has no typings; typed via PdfPrinterCtor below
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-import PdfPrinter from 'pdfmake/js/Printer.js';
+import { createRequire } from 'module';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfPrinterCtor = new (fonts: object, vfs?: unknown, urlResolver?: unknown, localAccess?: unknown) => { createPdfKitDocument(def: TDocumentDefinitions): Promise<any> };
-const Printer = PdfPrinter as unknown as PdfPrinterCtor;
 
 export interface WorksheetQuestion {
 	stem: string;
@@ -75,6 +72,11 @@ export async function renderWorksheet(
 	student: Student,
 	flags: FlagSet | null
 ): Promise<Buffer> {
+	const _require = createRequire(import.meta.url);
+	// pdfmake CJS exports { __esModule: true, default: PdfPrinter }
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const Printer = (_require('pdfmake/js/Printer.js') as any).default as PdfPrinterCtor;
+
 	const readingA11y = hasFlag(flags, 'reading_accessibility');
 	const chunking = hasFlag(flags, 'attention_chunking');
 	const scaffolding = hasFlag(flags, 'language_scaffolding');

@@ -1,5 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+
+// Allow up to 60 s on Vercel Pro (Hobby plan hard-caps at 10 s regardless)
+export const config = { maxDuration: 60 };
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '$env/dynamic/private';
 import type { FlagSet, Student } from '$lib/types';
@@ -79,7 +82,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	const genAI = new GoogleGenerativeAI(apiKey);
 	const model = genAI.getGenerativeModel({
 		model: 'gemini-2.5-flash-lite',
-		systemInstruction: SYSTEM_INSTRUCTION
+		systemInstruction: SYSTEM_INSTRUCTION,
+		generationConfig: { maxOutputTokens: 1200, temperature: 0.7 }
 	});
 
 	let rawText: string;

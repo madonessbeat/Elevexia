@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { FlagSet, Student } from '$lib/types';
 import { renderWorksheet } from '$lib/pdf/render';
 import type { WorksheetData } from '$lib/pdf/render';
@@ -73,7 +73,10 @@ export const POST: RequestHandler = async ({ request }) => {
 	const student: Student | undefined = body.student;
 	if (!student) throw error(400, 'Missing student');
 
-	const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+	const apiKey = env.GEMINI_API_KEY;
+	if (!apiKey) throw error(500, 'GEMINI_API_KEY is not configured on this server. Add it to your Vercel environment variables.');
+
+	const genAI = new GoogleGenerativeAI(apiKey);
 	const model = genAI.getGenerativeModel({
 		model: 'gemini-2.5-flash',
 		systemInstruction: SYSTEM_INSTRUCTION
@@ -97,7 +100,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		throw error(502, 'Model returned invalid JSON');
 	}
 
-	const pdfBuffer = await renderWorksheet(worksheet, student, student.flags ?? null);
+	let pdfBuffer: Buffer;
+	try {
+		pdfBuffer = await renderWorksheet(worksheet, student, student.flags ?? null);
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : String(e);
+		throw error(500, `PDF render error: ${msg}`);
+	}
 
 	return new Response(new Uint8Array(pdfBuffer), {
 		headers: {

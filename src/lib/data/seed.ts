@@ -12,6 +12,9 @@ const studentA: Student = {
 	lastInitial: 'T',
 	yearGroup: 5,
 	validatedByTeacher: false,
+	classLabel: '5M',
+	anonymizedLabel: 'Class 5M – Learner 01',
+	diagnosticStatus: 'completed',
 	flags: {
 		reading_accessibility: FALSE_FLAG,
 		attention_chunking: FALSE_FLAG,
@@ -48,6 +51,9 @@ const studentB: Student = {
 	lastInitial: 'D',
 	yearGroup: 5,
 	validatedByTeacher: false,
+	classLabel: '5M',
+	anonymizedLabel: 'Class 5M – Learner 02',
+	diagnosticStatus: 'completed',
 	flags: {
 		reading_accessibility: {
 			value: true,
@@ -99,6 +105,9 @@ const studentC: Student = {
 	lastInitial: 'P',
 	yearGroup: 4,
 	validatedByTeacher: false,
+	classLabel: '4A',
+	anonymizedLabel: 'Class 4A – Learner 01',
+	diagnosticStatus: 'completed',
 	flags: {
 		reading_accessibility: FALSE_FLAG,
 		attention_chunking: {
@@ -150,6 +159,9 @@ const studentD: Student = {
 	lastInitial: 'L',
 	yearGroup: 5,
 	validatedByTeacher: false,
+	classLabel: '5M',
+	anonymizedLabel: 'Class 5M – Learner 03',
+	diagnosticStatus: 'completed',
 	flags: {
 		reading_accessibility: {
 			value: true,
@@ -176,6 +188,9 @@ const studentE: Student = {
 	lastInitial: 'W',
 	yearGroup: 4,
 	validatedByTeacher: true,
+	classLabel: '4A',
+	anonymizedLabel: 'Class 4A – Learner 02',
+	diagnosticStatus: 'completed',
 	flags: {
 		reading_accessibility: FALSE_FLAG,
 		attention_chunking: FALSE_FLAG,

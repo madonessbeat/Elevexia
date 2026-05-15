@@ -79,8 +79,14 @@ export const POST: RequestHandler = async ({ request }) => {
 		systemInstruction: SYSTEM_INSTRUCTION
 	});
 
-	const result = await model.generateContent(buildPrompt(topic, activeFlags));
-	const rawText = result.response.text();
+	let rawText: string;
+	try {
+		const result = await model.generateContent(buildPrompt(topic, activeFlags));
+		rawText = result.response.text();
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : String(e);
+		throw error(502, `Gemini API error: ${msg}`);
+	}
 
 	const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
 

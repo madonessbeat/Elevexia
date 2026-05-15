@@ -145,8 +145,14 @@
 			});
 
 			if (!res.ok) {
-				const msg = await res.text().catch(() => 'Unknown error');
-				throw new Error(msg || `HTTP ${res.status}`);
+				let msg = `HTTP ${res.status}`;
+				try {
+					const data = await res.json();
+					msg = data.message ?? msg;
+				} catch {
+					msg = (await res.text().catch(() => '')) || msg;
+				}
+				throw new Error(msg);
 			}
 
 			const blob = await res.blob();
